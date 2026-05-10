@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 防止长表格/pre 把文档宽度撑出视口（flex 子项默认 min-width:auto） */
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}

@@ -1,4 +1,9 @@
-import { getMockDashboardData, type DashboardPayload } from "@/lib/mock-dashboard";
+import {
+  getMockDashboardData,
+  getMockStorageContent,
+  type DashboardPayload,
+  type StorageContentPayload,
+} from "@/lib/mock-dashboard";
 
 type DataMode = "mock" | "readonly_gateway";
 
@@ -35,7 +40,8 @@ function isDashboardPayload(value: unknown): value is DashboardPayload {
     typeof data.activeSignals === "number" &&
     typeof data.riskAlerts === "number" &&
     Array.isArray(data.latestReports) &&
-    Array.isArray(data.recentSignals)
+    Array.isArray(data.recentSignals) &&
+    Array.isArray(data.dataLayer)
   );
 }
 
@@ -69,4 +75,50 @@ export async function getDashboardData(): Promise<DashboardPayload> {
     return getMockDashboardData();
   }
   return fetchFromReadonlyGateway();
+}
+
+function isStorageContentPayload(value: unknown): value is StorageContentPayload {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const data = value as Partial<StorageContentPayload>;
+  return (
+    typeof data.key === "string" &&
+    typeof data.title === "string" &&
+    typeof data.format === "string" &&
+    typeof data.sourcePath === "string" &&
+    typeof data.updatedAt === "string" &&
+    typeof data.content === "string"
+  );
+}
+
+async function fetchStorageContentFromReadonlyGateway(
+  key: string,
+): Promise<StorageContentPayload> {
+  const baseUrl = ensureReadonlyBaseUrl();
+  const token = ensureReadonlyApiToken();
+  const response = await fetch(`${baseUrl}/storage/${encodeURIComponent(key)}`, {
+    cache: "no-store",
+    headers: {
+      "x-readonly-token": token,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Readonly gateway storage request failed: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as unknown;
+  if (!isStorageContentPayload(payload)) {
+    throw new Error("Readonly gateway returned invalid storage content payload.");
+  }
+  return payload;
+}
+
+export async function getStorageContent(key: string): Promise<StorageContentPayload> {
+  const mode = getDataMode();
+  if (mode === "mock") {
+    return getMockStorageContent(key);
+  }
+  return fetchStorageContentFromReadonlyGateway(key);
 }

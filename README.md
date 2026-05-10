@@ -13,15 +13,29 @@
 - `mock`（默认）：完全本地 mock 数据，不依赖 Hermes。
 - `readonly_gateway`：仅通过独立只读网关拉取数据（HTTP API），不直接访问 Hermes 文件系统。
 
-## 启动
+## 终端启动（推荐）
 
 ```bash
-cd /config/quant-dashboard
-cp .env.local.example .env.local
-npm run dev -- -p 3100
+# 一键同时启动网关+看板（推荐）
+cd /config
+./run-quant-dashboard.sh
 ```
 
-访问 [http://localhost:3100](http://localhost:3100)。
+或使用双终端方式：
+
+```bash
+# 终端A：先启动只读网关
+cd /config/quant-dashboard-gateway
+cp .env.example .env
+./start-terminal.sh
+
+# 终端B：再启动前端看板
+cd /config/quant-dashboard
+cp .env.local.example .env.local
+./start-terminal.sh
+```
+
+访问 [http://127.0.0.1:3100](http://127.0.0.1:3100)。
 
 ## 环境变量
 
@@ -56,24 +70,22 @@ npm run dev -- -p 3100
    cd /config/quant-dashboard-gateway
    cp .env.example .env
    npm install
-   npm run dev
+   ./start-terminal.sh
    ```
    默认 `GATEWAY_SOURCE_MODE=mock`，后续可在网关侧切到 `upstream` 接真实只读数据。
 2. 配置前端 `.env.local`：
    ```env
    DASHBOARD_DATA_MODE=readonly_gateway
-   READONLY_API_BASE_URL=http://127.0.0.1:8787
+   READONLY_API_BASE_URL=http://127.0.0.1:8790
    READONLY_API_TOKEN=change_me_readonly_token
    NEXT_PUBLIC_DASHBOARD_REFRESH_MS=30000
    ```
 3. 启动看板并验证页面数据来自 `readonly_gateway` 模式。
 
-## Docker 一键隔离运行
+## 常用命令
 
-```bash
-cd /config
-docker compose -f quant-dashboard-stack.compose.yml up -d --build
-```
-
-- 前端看板：`http://127.0.0.1:3100`
-- 只读网关：`http://127.0.0.1:8787/health`
+- 前端：`npm run dev:3100`
+- 网关：`npm run dev:8790`
+- 网关健康检查：`curl -s http://127.0.0.1:8790/health`
+- 一键启动两端：`/config/run-quant-dashboard.sh`
+- 一键停止两端：`/config/stop-quant-dashboard.sh`
